@@ -2,7 +2,6 @@
 name = "rust-portal"
 version = "0.1.0"
 authors = ["ludovicm67 <ludovicmuller1@gmail.com>"]
-edition = "2018"
 
 [dependencies]
 rouille = "3.0.0"
