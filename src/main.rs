@@ -3,6 +3,7 @@ extern crate rouille;
 
 use rouille::Response;
 use std::io;
+use std::process::Command;
 
 const CREDENTIALS: [(&'static str, &'static str); 2] = [("admin", "password"), ("teddy", "bear")];
 
@@ -14,7 +15,15 @@ fn main() {
                 if !CREDENTIALS.contains(&(input.username.as_str(), input.password.as_str())) {
                     return Response::text("Invalid credentials").with_status_code(401);
                 }
-
+                Command::new("pfctl")
+                    .args(&[
+                        "-t",
+                        "whitelist",
+                        "-T",
+                        "add",
+                        &request.remote_addr().ip().to_string(),
+                    ])
+                    .spawn();
                 let resp = Response::text(format!(
                     "Hello {}! You are now logged in and can browse the web!",
                     input.username
