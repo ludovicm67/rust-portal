@@ -5,3 +5,7 @@ authors = ["ludovicm67 <ludovicmuller1@gmail.com>"]
 
 [dependencies]
 rouille = "3.0.0"
+serde = "1.0"
+serde_qs = "0.4.0"
+data-encoding = "2.0.0"
+serde_derive = "1.0"
