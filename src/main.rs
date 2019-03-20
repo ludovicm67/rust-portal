@@ -1,19 +1,19 @@
 #[macro_use]
 extern crate serde_derive;
-extern crate serde;
 extern crate serde_qs as qs;
+extern crate serde;
 
 #[macro_use]
 extern crate rouille;
 
 use rouille::Response;
-use serde::{Deserialize, Serialize};
 use std::io;
 use std::process::Command;
+use serde::{Serialize, Deserialize};
 
 #[derive(PartialEq, Serialize, Deserialize)]
 struct Params {
-    next: String,
+    next: String
 }
 
 const CREDENTIALS: [(&'static str, &'static str); 2] = [("admin", "password"), ("teddy", "bear")];
@@ -29,7 +29,7 @@ fn main() {
                     return Response::text("Invalid credentials").with_status_code(401);
                 }
 
-                let child = Command::new("pfct")
+                let res = Command::new("pfctl")
                     .args(&[
                         "-t",
                         "whitelist",
@@ -37,9 +37,10 @@ fn main() {
                         "add",
                         &request.remote_addr().ip().to_string(),
                     ])
-                    .spawn();
+                    .spawn()
+                    .and_then(|mut c| c.wait());
 
-                if let Err(_) = child {
+                if let Err(_) = res {
                     return Response::text("internal server error").with_status_code(500);
                 }
 
@@ -49,8 +50,7 @@ fn main() {
                 ));
 
                 if let Some(params) = params {
-                    return resp
-                        .with_additional_header("Location", params.next)
+                    return resp.with_additional_header("Location", params.next)
                         .with_status_code(302);
                 }
 
@@ -58,20 +58,14 @@ fn main() {
             }
 
             if params == None {
-                let next = format!(
-                    "http://{}{}",
-                    request.header("Host").unwrap_or("localhost"),
-                    request.raw_url()
-                );
-                let query = qs::to_string(&Params {
-                    next: String::from(next),
-                });
+                let next = format!("http://{}{}", request.header("Host").unwrap_or("localhost"), request.raw_url());
+                let query = qs::to_string(&Params { next: String::from(next) });
                 return match query {
                     Ok(q) => Response::text("Redirecting")
                         .with_additional_header("Location", format!("http://192.168.10.1/?{}", q))
                         .with_status_code(302),
-                    Err(_) => Response::text("internal server error").with_status_code(500),
-                };
+                    Err(_) => Response::text("internal server error").with_status_code(500)
+                }
             }
 
             Response::html(web_content)
